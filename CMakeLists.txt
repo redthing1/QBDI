@@ -250,6 +250,14 @@ include(QBDIDependencies)
 
 # Setup assembly compile
 if(QBDI_PLATFORM_WINDOWS)
+  # Set the correct assembler for 32-bit vs 64-bit builds
+  if(QBDI_ARCH_X86)
+    # Force 32-bit assembler for X86 builds
+    set(CMAKE_ASM_MASM_COMPILER "ml.exe" CACHE STRING "MASM compiler for 32-bit" FORCE)
+  else()
+    # Use default 64-bit assembler for X86_64 builds
+    set(CMAKE_ASM_MASM_COMPILER "ml64.exe" CACHE STRING "MASM compiler for 64-bit" FORCE)
+  endif()
   enable_language(ASM_MASM)
   set(ASM_EXT "asm")
 elseif(QBDI_ARCH_X86 OR QBDI_ARCH_X86_64)
