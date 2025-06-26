@@ -306,11 +306,6 @@ if(QBDI_STATIC_LIBRARY)
   set_target_properties(QBDI_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
   target_include_directories(
     QBDI_obj PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include-static")
-  
-  # Disable SAFESEH for 32-bit Windows builds (assembly code incompatible)
-  if(QBDI_PLATFORM_WINDOWS AND QBDI_ARCH_X86)
-    target_link_options(QBDI_obj PRIVATE /SAFESEH:NO)
-  endif()
 
   set(qbdi_static_libs qbdi-llvm QBDI_obj spdlog)
 
@@ -332,10 +327,6 @@ if(QBDI_STATIC_LIBRARY)
 
   if(QBDI_PLATFORM_WINDOWS)
     set_target_properties(QBDI_static PROPERTIES OUTPUT_NAME QBDI_static)
-    # Disable SAFESEH for 32-bit Windows builds (assembly code incompatible)
-    if(QBDI_ARCH_X86)
-      target_link_options(QBDI_static PRIVATE /SAFESEH:NO)
-    endif()
   endif()
 
   install(
@@ -364,11 +355,6 @@ if(QBDI_SHARED_LIBRARY)
   target_link_libraries(QBDI PRIVATE QBDI_src QBDI_shared_src qbdi-llvm)
 
   set_target_properties(QBDI PROPERTIES OUTPUT_NAME QBDI)
-
-  # Disable SAFESEH for 32-bit Windows builds (assembly code incompatible)
-  if(QBDI_PLATFORM_WINDOWS AND QBDI_ARCH_X86)
-    target_link_options(QBDI PRIVATE /SAFESEH:NO)
-  endif()
 
   if(DEFINED STRIP_PATH)
     # Force a strip cmd
