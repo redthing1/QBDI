@@ -249,8 +249,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
                     {llvm::AArch64::AUTIA, llvm::AArch64::XPACI},
                     {llvm::AArch64::AUTIB, llvm::AArch64::XPACI},
                 })),
-                RemoveOperand::unique(Operand(1)),
-                AddOperand::unique(Operand(1), Operand(0)))),
+                RemoveOperand::unique(Operand(2)))),
             SaveX28IfSet::unique()));
 
     /* Rule #13: Replace AUTDZA, AUTDZB, AUTIZA, AUTIZB
@@ -270,8 +269,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
                     {llvm::AArch64::AUTDZB, llvm::AArch64::XPACD},
                     {llvm::AArch64::AUTIZA, llvm::AArch64::XPACI},
                     {llvm::AArch64::AUTIZB, llvm::AArch64::XPACI},
-                })),
-                AddOperand::unique(Operand(1), Operand(0)))),
+                })))),
             SaveX28IfSet::unique()));
 
     /* Rule #14: Replace AUTIA1716, AUTIB1716
@@ -340,20 +338,30 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
     /* Rule #12: Clear local monitor state
      */
     rules.emplace_back(
-        Or::unique(
-            conv_unique<PatchCondition>(OpIs::unique(llvm::AArch64::CLREX),
-                                        OpIs::unique(llvm::AArch64::SVC))),
+        OpIs::unique(llvm::AArch64::CLREX),
         conv_unique<PatchGenerator>(
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
-            // for SVC, we need to backup the value of Temp(0) after the syscall
-            SaveTemp::unique(Temp(0)),
             GetConstant::unique(Temp(0), Constant(0)),
             WriteTemp::unique(
                 Temp(0),
                 Offset(offsetof(Context, gprState.localMonitor.enable))),
             SaveX28IfSet::unique()));
 
-    /* Rule #13: exclusive load 1 register
+    /* Rule #13: Clear local monitor state on SVC
+     */
+    rules.emplace_back(
+        OpIs::unique(llvm::AArch64::SVC),
+        conv_unique<PatchGenerator>(
+            ModifyInstruction::unique(InstTransform::UniquePtrVec()),
+            // for SVC, we need to backup the value of Temp(0) after the syscall
+            SaveTemp::unique(Temp(0), true),
+            GetConstant::unique(Temp(0), Constant(0)),
+            WriteTemp::unique(
+                Temp(0),
+                Offset(offsetof(Context, gprState.localMonitor.enable))),
+            SaveX28IfSet::unique()));
+
+    /* Rule #14: exclusive load 1 register
      */
     rules.emplace_back(
         Or::unique(
@@ -376,7 +384,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
             SaveX28IfSet::unique()));
 
-    /* Rule #14: exclusive load 2 register
+    /* Rule #15: exclusive load 2 register
      */
     rules.emplace_back(
         Or::unique(
@@ -395,7 +403,7 @@ std::vector<PatchRule> getDefaultPatchRules(Options opts) {
             ModifyInstruction::unique(InstTransform::UniquePtrVec()),
             SaveX28IfSet::unique()));
 
-    /* Rule #15: exclusive store
+    /* Rule #16: exclusive store
      */
     rules.emplace_back(
         Or::unique(

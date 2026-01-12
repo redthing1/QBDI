@@ -30,7 +30,7 @@ except:
 
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 def detect_QBDI_platform():
     current_os = None
@@ -91,6 +91,7 @@ class CMakeBuild(build_ext):
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         detected_platform, detected_arch = detect_QBDI_platform()
+        python_version = Version(platform.python_version()).base_version
 
         cmake_args = ['-G', 'Ninja',
                       '-DPYQBDI_OUTPUT_DIRECTORY={}'.format(extdir),
@@ -107,8 +108,10 @@ class CMakeBuild(build_ext):
                       '-DQBDI_TEST=OFF',
                       '-DQBDI_TOOLS_FRIDAQBDI=OFF',
                       '-DQBDI_TOOLS_PYQBDI=ON',
-                      '-DQBDI_TOOLS_PYQBDI_TARGET_PYTHON_VERSION={}'.format(platform.python_version()),
+                      '-DQBDI_TOOLS_PYQBDI_TARGET_PYTHON_VERSION={}'.format(python_version),
                      ]
+        if os.getenv('CMAKE_OSX_ARCHITECTURES') == 'arm64e':
+            cmake_args += ['-DQBDI_PTRAUTH=ON']
         build_args = ['--config', 'Release', '--']
 
         if HAS_NINJA:

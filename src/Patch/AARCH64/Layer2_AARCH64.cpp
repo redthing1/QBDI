@@ -78,28 +78,28 @@ llvm::MCInst addr(RegLLVM dst, RegLLVM src1, RegLLVM src2, ShiftExtendType type,
   unsigned immValue;
   switch (type) {
     case UXTB:
-      immValue = (llvm::AArch64_AM::UXTB << 3) | (shift & 0x7);
+      immValue = getArithExtendImm(llvm::AArch64_AM::UXTB, shift);
       break;
     case UXTH:
-      immValue = (llvm::AArch64_AM::UXTH << 3) | (shift & 0x7);
+      immValue = getArithExtendImm(llvm::AArch64_AM::UXTH, shift);
       break;
     case UXTW:
-      immValue = (llvm::AArch64_AM::UXTW << 3) | (shift & 0x7);
+      immValue = getArithExtendImm(llvm::AArch64_AM::UXTW, shift);
       break;
     case UXTX:
-      immValue = (llvm::AArch64_AM::UXTX << 3) | (shift & 0x7);
+      immValue = getArithExtendImm(llvm::AArch64_AM::UXTX, shift);
       break;
     case SXTB:
-      immValue = (llvm::AArch64_AM::SXTB << 3) | (shift & 0x7);
+      immValue = getArithExtendImm(llvm::AArch64_AM::SXTB, shift);
       break;
     case SXTH:
-      immValue = (llvm::AArch64_AM::SXTH << 3) | (shift & 0x7);
+      immValue = getArithExtendImm(llvm::AArch64_AM::SXTH, shift);
       break;
     case SXTW:
-      immValue = (llvm::AArch64_AM::SXTW << 3) | (shift & 0x7);
+      immValue = getArithExtendImm(llvm::AArch64_AM::SXTW, shift);
       break;
     case SXTX:
-      immValue = (llvm::AArch64_AM::SXTX << 3) | (shift & 0x7);
+      immValue = getArithExtendImm(llvm::AArch64_AM::SXTX, shift);
       break;
     default:
       QBDI_ABORT("Unexpected type %d", type);
@@ -379,7 +379,6 @@ llvm::MCInst ldxrb(RegLLVM dest, RegLLVM addr) {
   inst.setOpcode(llvm::AArch64::LDXRB);
   inst.addOperand(llvm::MCOperand::createReg(dest.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(addr.getValue()));
-  inst.addOperand(llvm::MCOperand::createImm(0));
   return inst;
 }
 
@@ -599,6 +598,7 @@ llvm::MCInst autia(RegLLVM reg, RegLLVM ctx) {
   llvm::MCInst inst;
   inst.setOpcode(llvm::AArch64::AUTIA);
   inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(ctx.getValue()));
   return inst;
 }
@@ -606,6 +606,7 @@ llvm::MCInst autia(RegLLVM reg, RegLLVM ctx) {
 llvm::MCInst autib(RegLLVM reg, RegLLVM ctx) {
   llvm::MCInst inst;
   inst.setOpcode(llvm::AArch64::AUTIB);
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(ctx.getValue()));
   return inst;
@@ -615,12 +616,14 @@ llvm::MCInst autiza(RegLLVM reg) {
   llvm::MCInst inst;
   inst.setOpcode(llvm::AArch64::AUTIZA);
   inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
   return inst;
 }
 
 llvm::MCInst autizb(RegLLVM reg) {
   llvm::MCInst inst;
   inst.setOpcode(llvm::AArch64::AUTIZB);
+  inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
   inst.addOperand(llvm::MCOperand::createReg(reg.getValue()));
   return inst;
 }

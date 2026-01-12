@@ -29,8 +29,8 @@ endif()
 # - setup.cfg
 # - tools/frida-qbdi.js
 set(QBDI_VERSION_MAJOR 0)
-set(QBDI_VERSION_MINOR 11)
-set(QBDI_VERSION_PATCH 1)
+set(QBDI_VERSION_MINOR 12)
+set(QBDI_VERSION_PATCH 2)
 set(QBDI_VERSION_DEV 1)
 
 set(QBDI_VERSION_STRING
@@ -176,6 +176,14 @@ if(QBDI_PLATFORM_OSX)
         "TRUE"
         CACHE STRING "" FORCE)
   endif()
+endif()
+
+if(QBDI_PTRAUTH AND NOT ((QBDI_PLATFORM_OSX OR QBDI_PLATFORM_IOS)
+                         AND QBDI_ARCH_AARCH64))
+  message(
+    FATAL_ERROR
+      "PTRAUTH is only supported for IOS and OSX platforms and AARCH64 architecture."
+  )
 endif()
 
 message(STATUS "")

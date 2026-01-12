@@ -42,16 +42,14 @@
 #include "Utility/System.h"
 
 #include "QBDI/Options.h"
+#include "QBDI/PtrAuth.h"
 #include "QBDI/State.h"
 
 namespace QBDI {
 
 uint64_t ExecBlock::getPageSize() {
-  // iOS now use 16k superpages, but as JIT mecanisms are totally differents
-  // on this platform, we can enforce a 4k "virtual" page size
-  return is_ios ? 4096
-                : llvm::expectedToOptional(llvm::sys::Process::getPageSize())
-                      .value_or(4096);
+  return llvm::expectedToOptional(llvm::sys::Process::getPageSize())
+      .value_or(4096);
 }
 
 ExecBlock::ExecBlock(
@@ -67,12 +65,19 @@ ExecBlock::ExecBlock(
   uint64_t pageSize = getPageSize();
   unsigned mflags = PF::MF_READ | PF::MF_WRITE;
 
-  if constexpr (is_ios)
-    mflags |= PF::MF_EXEC;
+  if constexpr (is_ios) {
+    if (not isRWRXSupported()) {
+      QBDI_REQUIRE_ABORT(isRWXSupported(), "allocation fail");
+      mflags |= PF::MF_EXEC;
+    }
+  }
 
   // Allocate 2 pages block
   codeBlock = QBDI::allocateMappedMemory(2 * pageSize, nullptr, mflags, ec);
   QBDI_REQUIRE_ABORT(codeBlock.base() != nullptr, "allocation fail");
+  QBDI_REQUIRE_ABORT(
+      codeBlock.base() == strip_ptrauth(codeBlock.base()),
+      "Allocate a buffer with authenticated pointer, not supported");
   // Split it in two blocks
   dataBlock = llvm::sys::MemoryBlock(
       reinterpret_cast<void *>(reinterpret_cast<uint64_t>(codeBlock.base()) +
@@ -369,6 +374,8 @@ ExecBlock::writeSequence(std::vector<Patch>::const_iterator seqIt,
   // Pages are RWX on iOS
   // Ensure code block is RW
   if constexpr (not is_ios) {
+    makeRW();
+  } else if (isRWRXSupported()) {
     makeRW();
   }
   initScratchRegisterForPatch(seqIt, seqEnd);

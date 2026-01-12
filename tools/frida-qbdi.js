@@ -23,8 +23,8 @@
  *
  */
 export var QBDI_MAJOR = 0;
-export var QBDI_MINOR = 11;
-export var QBDI_PATCH = 0;
+export var QBDI_MINOR = 12;
+export var QBDI_PATCH = 1;
 /**
  * Minimum version of QBDI to use Frida bindings
  */
@@ -121,6 +121,8 @@ class QBDIBinder extends Binder {
     // paths where QBDI library may be
     get QBDI_PATHS() {
         return [
+            //palera1n path
+            '/var/jb/usr/lib',
             // UNIX default paths
             '/usr/lib/',
             '/usr/local/lib/',

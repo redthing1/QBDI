@@ -56,7 +56,7 @@ PureEval<AutoClone<PatchGenerator, JmpEpilogue>>::generate(
 // =================
 
 ModifyInstruction::ModifyInstruction(InstTransform::UniquePtrVec &&transforms)
-    : transforms(std::forward<InstTransform::UniquePtrVec>(transforms)){};
+    : transforms(std::forward<InstTransform::UniquePtrVec>(transforms)) {};
 
 std::unique_ptr<PatchGenerator> ModifyInstruction::clone() const {
   return ModifyInstruction::unique(cloneVec(transforms));
@@ -206,8 +206,12 @@ RelocatableInst::UniquePtrVec
 SaveTemp::generate(const Patch &patch, TempManager &temp_manager) const {
 
   Reg reg = temp_manager.getRegForTemp(temp);
-  return conv_unique<RelocatableInst>(
-      StoreDataBlock::unique(reg, reg.offset()));
+  if ((not checkManager) or temp_manager.shouldRestore(reg)) {
+    return conv_unique<RelocatableInst>(
+        StoreDataBlock::unique(reg, reg.offset()));
+  } else {
+    return {};
+  }
 }
 
 // SaveReg

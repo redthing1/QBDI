@@ -32,6 +32,7 @@
 #include "Patch/Patch.h"
 #include "Patch/RelocatableInst.h"
 #include "Utility/LogSys.h"
+#include "Utility/System.h"
 
 #if defined(QBDI_PLATFORM_WINDOWS)
 extern "C" void qbdi_runCodeBlock(void *codeBlock, QBDI::rword execflags);
@@ -50,6 +51,7 @@ void ExecBlock::selectSeq(uint16_t seqID) {
   currentInst = seqRegistry[currentSeq].startInstID;
   context->hostState.currentSROffset =
       seqRegistry[currentSeq].sr.scratchRegisterOffset;
+  // Note: selector is currently not an authenticated pointer
   context->hostState.selector =
       reinterpret_cast<rword>(codeBlock.base()) +
       static_cast<rword>(instRegistry[currentInst].offset);
@@ -57,10 +59,16 @@ void ExecBlock::selectSeq(uint16_t seqID) {
 }
 
 void ExecBlock::run() {
-  // Pages are RWX on iOS
   if constexpr (is_ios) {
-    llvm::sys::Memory::InvalidateInstructionCache(codeBlock.base(),
-                                                  codeBlock.allocatedSize());
+    if (isRWRXSupported()) {
+      if (not isRX()) {
+        makeRX();
+      }
+    } else {
+      // Pages are RWX on iOS
+      llvm::sys::Memory::InvalidateInstructionCache(codeBlock.base(),
+                                                    codeBlock.allocatedSize());
+    }
   } else {
     if (not isRX()) {
       makeRX();
@@ -74,6 +82,7 @@ void ExecBlock::run() {
                getDataBlockBase());
 
   // Restore errno and Execute
+  // Note: codeBlock.base() is currently not an authenticated pointer
   if (not llvmCPUs.hasOptions(Options::OPT_DISABLE_ERRNO_BACKUP)) {
     errno = vminstance->getErrno();
     qbdi_runCodeBlock(codeBlock.base(), context->hostState.executeFlags);
@@ -135,7 +144,7 @@ void ExecBlock::initScratchRegisterForPatch(
 
   std::set<RegLLVM> freeRegister(&GPR_ID[0], &GPR_ID[AVAILABLE_GPR]);
 
-  if constexpr (is_osx) {
+  if constexpr (is_osx or is_ios) {
     // x18 is reserved by the platform, we can used it
     freeRegister.erase(GPR_ID[18]);
   }
