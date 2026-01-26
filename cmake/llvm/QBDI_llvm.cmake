@@ -41,6 +41,19 @@ FetchContent_Populate(
   SUBBUILD_DIR "${FETCHCONTENT_BASE_DIR}/llvm-subbuild"
   QUIET)
 
+option(QBDI_LLVM_PRUNE "Prune nonessential LLVM sources from QBDI checkout" OFF)
+if(QBDI_LLVM_PRUNE)
+  set(_qbdi_llvm_test_dir "${FETCHCONTENT_BASE_DIR}/qbdi_llvm/llvm/test")
+  set(_qbdi_llvm_unittests_dir "${FETCHCONTENT_BASE_DIR}/qbdi_llvm/llvm/unittests")
+  if(EXISTS "${_qbdi_llvm_test_dir}")
+    file(REMOVE_RECURSE "${_qbdi_llvm_test_dir}")
+    message(STATUS "QBDI: pruned LLVM nonessential sources")
+  endif()
+  if(EXISTS "${_qbdi_llvm_unittests_dir}")
+    file(REMOVE_RECURSE "${_qbdi_llvm_unittests_dir}")
+  endif()
+endif()
+
 set(CMAKE_CXX_STANDARD
     17
     CACHE STRING "USE CPP 17")
